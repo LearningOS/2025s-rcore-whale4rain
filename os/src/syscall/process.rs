@@ -44,7 +44,6 @@ pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
         return -1; // 指针未对齐
     }
 
-    // 检查页面权限：确保 [ts, ts + sizeof(TimeVal)) 可写
     let page_table = PageTable::from_token(token);
     let start_va = VirtAddr::from(ts_addr);
     let end_va = VirtAddr::from(ts_addr + core::mem::size_of::<TimeVal>());
