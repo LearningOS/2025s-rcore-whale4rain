@@ -36,10 +36,39 @@ lazy_static! {
 /// address space
 pub struct MemorySet {
     page_table: PageTable,
-    areas: Vec<MapArea>,
+    /// pub areas: Vec<MapArea>,
+    pub areas: Vec<MapArea>,
 }
 
 impl MemorySet {
+    /// Remove a framed area
+    pub fn remove_framed_area(&mut self, start_va: VirtAddr, end_va: VirtAddr) -> Result<(), ()> {
+        let start_vpn = start_va.floor();
+        let end_vpn = end_va.ceil();
+        if let Some(idx) = self
+            .areas
+            .iter()
+            .position(|area| area.vpn_range.get_start() == start_vpn)
+        {
+            let area = &mut self.areas[idx];
+            let area_end_vpn = area.vpn_range.get_end();
+            if end_vpn > area_end_vpn {
+                return Err(());
+            }
+            if end_vpn < area_end_vpn {
+                // 部分解除，缩小 MapArea
+                area.shrink_to(&mut self.page_table, end_vpn);
+                Ok(())
+            } else {
+                // 移除整个 MapArea
+                let mut map_area = self.areas.remove(idx);
+                map_area.unmap(&mut self.page_table);
+                Ok(())
+            }
+        } else {
+            Err(())
+        }
+    }
     /// Create a new empty `MemorySet`.
     pub fn new_bare() -> Self {
         Self {
@@ -265,7 +294,8 @@ impl MemorySet {
 }
 /// map area structure, controls a contiguous piece of virtual memory
 pub struct MapArea {
-    vpn_range: VPNRange,
+    // pub vpn_range: VPNRange,
+    pub vpn_range: VPNRange,
     data_frames: BTreeMap<VirtPageNum, FrameTracker>,
     map_type: MapType,
     map_perm: MapPermission,

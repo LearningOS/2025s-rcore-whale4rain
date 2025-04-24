@@ -153,6 +153,38 @@ impl TaskManager {
             panic!("All applications completed!");
         }
     }
+    /// Get the current task
+    pub fn current_task(&self) -> Option<&'static TaskControlBlock> {
+        let inner = self.inner.exclusive_access();
+        let current_idx = inner.current_task;
+        if current_idx < inner.tasks.len() {
+            let task = unsafe { &*(&inner.tasks[current_idx] as *const TaskControlBlock) };
+            Some(task)
+        } else {
+            None
+        }
+    }
+    /// Get the mutable current task
+    pub fn current_task_mut(&self) -> Option<&'static mut TaskControlBlock> {
+        let mut inner = self.inner.exclusive_access();
+        let current_idx = inner.current_task;
+        if current_idx < inner.tasks.len() {
+            let task = unsafe { &mut *(&mut inner.tasks[current_idx] as *mut TaskControlBlock) };
+            Some(task)
+        } else {
+            None
+        }
+    }
+}
+///
+/// Get the current task
+pub fn current_task() -> Option<&'static TaskControlBlock> {
+    TASK_MANAGER.current_task()
+}
+
+/// Get the mutable current task
+pub fn current_task_mut() -> Option<&'static mut TaskControlBlock> {
+    TASK_MANAGER.current_task_mut()
 }
 
 /// Run the first task in task list.

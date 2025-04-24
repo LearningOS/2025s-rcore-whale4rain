@@ -28,6 +28,9 @@ pub struct TaskControlBlock {
 
     /// Program break
     pub program_brk: usize,
+
+    /// The number of syscalls executed by the current process
+    pub syscall_count: [usize; 500],
 }
 
 impl TaskControlBlock {
@@ -63,6 +66,7 @@ impl TaskControlBlock {
             base_size: user_sp,
             heap_bottom: user_sp,
             program_brk: user_sp,
+            syscall_count: [0; 500],
         };
         // prepare TrapContext in user space
         let trap_cx = task_control_block.get_trap_cx();
@@ -94,6 +98,21 @@ impl TaskControlBlock {
             Some(old_break)
         } else {
             None
+        }
+    }
+    /// Get the number of times a syscall has been called
+    pub fn get_syscall_count(&self, syscall_id: usize) -> usize {
+        if syscall_id < self.syscall_count.len() {
+            self.syscall_count[syscall_id]
+        } else {
+            0
+        }
+    }
+
+    /// Increment the syscall count for a given syscall ID
+    pub fn inc_syscall_count(&mut self, syscall_id: usize) {
+        if syscall_id < self.syscall_count.len() {
+            self.syscall_count[syscall_id] = self.syscall_count[syscall_id].saturating_add(1);
         }
     }
 }
